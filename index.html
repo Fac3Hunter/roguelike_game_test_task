@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,700&amp;subset=cyrillic"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700&amp;subset=cyrillic"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Roboto:300,400,700&amp;subset=cyrillic"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Playfair+Display:400,400i|Tinos:400,400i&amp;subset=cyrillic"
+      rel="stylesheet"
+    />
+    <script
+      type="text/javascript"
+      src="/shared/3rdparty/jquery/jquery.js"
+      language="javascript1.1"
+    ></script>
+    <script src="index.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body,
+      html {
+        height: 100%;
+      }
+      body {
+        background-color: #000000;
+        color: #ffffff;
+      }
+      h1 {
+        font-family: "Playfair Display";
+        font-size: 30px;
+        padding: 10px 0px;
+        margin: 0px;
+      }
+      .field-box {
+        border: 2px solid #d0d0d0;
+        float: left;
+      }
+      .field {
+        display: grid;
+        grid-template-columns: repeat(40, 1fr);
+        position: relative;
+        width: 1024px;
+        height: 640px;
+      }
+      .field .tile {
+        position: relative;
+        grid-column: 1 5;
+        width: 100%;
+        height: 100%;
+        background-size: 100%;
+        background-image: url(images/tile-.png);
+        z-index: 5;
+      }
+      .field .tileW {
+        background-image: url(images/tile-W.png);
+      }
+      .field .tileP {
+        background-image: url(images/tile-P.png);
+        z-index: 10;
+      }
+      .field .tileHP {
+        background-image: url(images/tile-HP.png);
+        z-index: 9;
+      }
+      .field .tileSW {
+        background-image: url(images/tile-SW.png);
+        z-index: 9;
+      }
+      .field .tileE {
+        background-image: url(images/tile-E.png);
+        z-index: 10;
+      }
+      .field .tile .health {
+        background-color: #ff0000;
+        position: absolute;
+        z-index: 11;
+        left: 0px;
+        top: 0px;
+        height: 3px;
+      }
+      .field .tileP .health {
+        background-color: #00ff00;
+        z-index: 11;
+        left: 0px;
+        top: 0px;
+        height: 3px;
+      }
+      .inventory-box {
+        border: 2px solid #d0d0d0;
+        float: left;
+      }
+      .inventory {
+        position: relative;
+        width: 800px;
+        height: 32px;
+      }
+      .cl {
+        clear: both;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Игровое поле</h1>
+    <div class="field-box"><div class="field"></div></div>
+    <div class="cl"></div>
+    <!--h1>Инвентарь</h1>
+		<div class="inventory-box"><div class="inventory"></div></div-->
+
+    <script>
+      const field_arr = []; // поле в массиве
+      const field = document.querySelector(".field");
+      let hero_health = 5;
+      let attack_power = 1;
+
+      function getRandomNumber(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      } // случайное число
+
+      function redrawArray() {
+        while (field.firstChild) {
+          field.removeChild(field.firstChild); // очистка поля
+        }
+
+        for (let i of field_arr) {
+          field.appendChild(i); // заполнение поля
+        }
+      }
+
+      function isRoomOverlapping(row, column, width, height) {
+        for (let x = 0; x < width + 3; x++) {
+          for (let y = 0; y < height + 3; y++) {
+            if (
+              field_arr[(column + y) * 40 + row + x].classList.contains("tile")
+            ) {
+              return true; // Обнаружено перекрытие
+            }
+          }
+        }
+        return false; // Нет перекрытия
+      } // проверка комнат на перекрытие друг друга
+
+      for (let column = 0; column < 24; column++) {
+        for (let row = 0; row < 40; row++) {
+          let div = document.createElement("div");
+          div.className = "tileW";
+          div.dataset.column = column;
+          div.dataset.row = row;
+          field_arr.push(div);
+        }
+      } // заполнение массива стенами
+
+      for (let room = 0; room <= getRandomNumber(5, 10); room++) {
+        let row, column, width, height;
+        do {
+          row = getRandomNumber(0, 32);
+          column = getRandomNumber(0, 16);
+          width = getRandomNumber(0, 5);
+          height = getRandomNumber(0, 5);
+        } while (isRoomOverlapping(row, column, width, height)); // проверка на перекрытие
+
+        for (let x = 0; x < width + 3; x++) {
+          for (let y = 0; y < height + 3; y++) {
+            field_arr[(column + y) * 40 + row + x].className = "tile";
+          }
+        }
+      } // прорисовка комнат
+
+      for (let y = 0; y < getRandomNumber(3, 5); y++) {
+        let y1 = getRandomNumber(0, 23);
+
+        if (!field_arr[y1 * 40].classList.contains("checked")) {
+          field_arr[y1 * 40].classList.add("checked");
+          for (let row = 0; row < 40; row++) {
+            field_arr[row + y1 * 40].classList.remove("tileW");
+            field_arr[row + y1 * 40].classList.add("tile");
+          }
+        } else {
+          y--;
+        }
+      } // прорисовка вертикальных проходов
+
+      for (let x = 0; x < getRandomNumber(3, 5); x++) {
+        let x1 = getRandomNumber(0, 39);
+        if (!field_arr[x1].classList.contains("checked")) {
+          field_arr[x1].classList.add("checked");
+          for (let col = 0; col < 24; col++) {
+            field_arr[col * 40 + x1].classList.remove("tileW");
+            field_arr[col * 40 + x1].classList.add("tile");
+          }
+        } else {
+          x--;
+        }
+      } // прорисовка горизонтальных проходов
+
+      for (let sword = 0; sword < 2; sword++) {
+        let x = getRandomNumber(0, 39);
+        let y = getRandomNumber(0, 23);
+        if (field_arr[y * 40 + x].classList.contains("tile")) {
+          field_arr[y * 40 + x].classList.add("tileSW");
+        } else {
+          sword--;
+        }
+      } // прорисовка мечей
+
+      for (let health_pot = 0; health_pot < 10; health_pot++) {
+        let x = getRandomNumber(0, 39);
+        let y = getRandomNumber(0, 23);
+        if (
+          field_arr[y * 40 + x].classList.contains("tile") &&
+          !field_arr[y * 40 + x].classList.contains("tileSW")
+        ) {
+          field_arr[y * 40 + x].classList.add("tileHP");
+        } else {
+          health_pot--;
+        }
+      } // прорисовка зельев здоровья
+
+      let hero_id;
+      for (let hero = 0; hero < 1; hero++) {
+        let x = getRandomNumber(0, 39);
+        let y = getRandomNumber(0, 23);
+        if (
+          field_arr[y * 40 + x].classList.contains("tile") &&
+          !field_arr[y * 40 + x].classList.contains("tileHP") &&
+          !field_arr[y * 40 + x].classList.contains("tileSW")
+        ) {
+          hero_id = y * 40 + x;
+          field_arr[hero_id].classList.add("tileP");
+
+          let hero_hp = document.createElement("div");
+          hero_hp.classList.add("health");
+          hero_hp.style.width = "100%";
+          field_arr[hero_id].appendChild(hero_hp);
+        } else {
+          hero--;
+        }
+      } // прорисовка героя
+
+      for (let enemy = 0; enemy < 10; enemy++) {
+        let enemy_health = 3;
+
+        let x = getRandomNumber(0, 39);
+        let y = getRandomNumber(0, 23);
+        if (
+          field_arr[y * 40 + x].classList.contains("tile") &&
+          !field_arr[y * 40 + x].classList.contains("tileSW") &&
+          !field_arr[y * 40 + x].classList.contains("tileP") &&
+          !field_arr[y * 40 + x].classList.contains("tileHP")
+        ) {
+          field_arr[y * 40 + x].classList.add("tileE");
+
+          let enemy_hp = document.createElement("div");
+          enemy_hp.classList.add("health");
+          enemy_hp.style.width = "100%";
+          field_arr[y * 40 + x].appendChild(enemy_hp);
+        } else {
+          enemy--;
+        }
+      } // прорисовка противников
+
+      document.addEventListener("keydown", function turn(event) {
+        let key = event.key;
+        let hero = field_arr[hero_id]; // нахожу героя в массиве
+
+        let tile;
+
+        let x = parseInt(hero.dataset.row); // нахожу x и y координаты
+        let y = parseInt(hero.dataset.column); // от этого можно было бы избавиться используя двумерный массив, но я почему-то сразу этого не понял
+
+        switch (key) {
+          case "w":
+            hero_id = x + (y - 1) * 40;
+            tile = field_arr[hero_id]; // выбор тайла выше
+            if (y == 0) {
+              hero_id = x + y * 40;
+              break;
+            } // проверка на границы
+
+            if (
+              !tile.classList.contains("tileW") &&
+              !tile.classList.contains("tileE")
+            ) {
+              tile.classList.add("tileP"); // добавление героя на тайл
+              tile.appendChild(hero.firstChild);
+              hero.classList.remove("tileP"); // удаление героя со старого тайла
+              if (hero.firstChild) {
+                hero.removeChild(hero.firstChild);
+              }
+            } else {
+              hero_id = x + y * 40;
+            }
+
+            redrawArray(); // перерисовка блока
+
+            break;
+          case "a":
+            hero_id = x - 1 + y * 40;
+            tile = field_arr[hero_id];
+            if (x == 0) {
+              hero_id = x + y * 40;
+              break;
+            } // проверка на границы
+
+            if (
+              !tile.classList.contains("tileW") &&
+              !tile.classList.contains("tileE")
+            ) {
+              tile.classList.add("tileP"); // добавление героя на тайл
+              tile.appendChild(hero.firstChild); // перенос хп на новый тайл
+              hero.classList.remove("tileP"); // удаление героя со старого тайла
+              if (hero.firstChild) {
+                hero.removeChild(hero.firstChild);
+              }
+            } else {
+              hero_id = x + y * 40;
+            }
+
+            redrawArray(); // перерисовка блока
+
+            break;
+          case "s":
+            hero_id = x + (y + 1) * 40;
+            tile = field_arr[hero_id];
+            if (y == 23) {
+              hero_id = x + y * 40;
+              break;
+            }
+
+            if (
+              !tile.classList.contains("tileW") &&
+              !tile.classList.contains("tileE")
+            ) {
+              tile.classList.add("tileP"); // добавление героя на тайл
+              tile.appendChild(hero.firstChild);
+              hero.classList.remove("tileP"); // удаление героя со старого тайла
+              if (hero.firstChild) {
+                hero.removeChild(hero.firstChild);
+              }
+            } else {
+              hero_id = x + y * 40;
+            }
+
+            redrawArray(); // перерисовка блока
+
+            break;
+          case "d":
+            hero_id = x + 1 + y * 40;
+            tile = field_arr[hero_id];
+            if (x == 39) {
+              hero_id = x + y * 40;
+              break;
+            }
+
+            if (
+              !tile.classList.contains("tileW") &&
+              !tile.classList.contains("tileE")
+            ) {
+              tile.classList.add("tileP"); // добавление героя на тайл
+              tile.appendChild(hero.firstChild);
+              hero.classList.remove("tileP"); // удаление героя со старого тайла
+              if (hero.firstChild) {
+                hero.removeChild(hero.firstChild);
+              }
+            } else {
+              hero_id = x + y * 40;
+            }
+
+            redrawArray();
+
+            break;
+          case " ":
+            for (let i = -1; i <= 1; i++) {
+              for (let j = -1; j <= 1; j++) {
+                tile = field_arr[x + i + (y + j) * 40];
+                if (tile && tile.classList.contains("tileE")) {
+                  let hp_width = tile.firstChild.style.width;
+
+                  if (
+                    parseInt(tile.firstChild.style.width) <=
+                    33 * attack_power
+                  ) {
+                    tile.removeChild(tile.firstChild);
+                    tile.classList.remove("tileE");
+                  }
+                  tile.firstChild.style.width = `${
+                    parseInt(tile.firstChild.style.width) - 33 * attack_power
+                  }%`;
+                  if (parseInt(tile.firstChild.style.width) <= 1) {
+                    tile.removeChild(tile.firstChild);
+                    tile.classList.remove("tileE");
+                  }
+                }
+              }
+            }
+            break;
+          default:
+            return; // Выходим из функции, если нажата другая клавиша
+        } // логика шагов
+
+        if (tile.classList.contains("tileHP")) {
+          tile.firstChild.style.width = "100%";
+          tile.classList.remove("tileHP");
+        }
+        if (tile.classList.contains("tileSW")) {
+          attack_power++;
+          tile.classList.remove("tileSW");
+        }
+        let x1, y1; // нужны для определений x и y координат врагов
+        let tile_e; // нужен для задания новых координат тайлу врага
+        let win_flag = true; // нужен для победы
+        for (let i of field_arr) {
+          if (i.classList.contains("tileE") && !i.classList.contains("moved")) {
+            win_flag = false;
+            x1 = parseInt(i.dataset.row);
+            y1 = parseInt(i.dataset.column);
+
+            for (let j = -1; j <= 1; j++) {
+              for (let z = -1; z <= 1; z++) {
+                if (field_arr[x1 + j + (y1 + z) * 40]) {
+                  if (
+                    field_arr[x1 + j + (y1 + z) * 40].classList.contains(
+                      "tileP"
+                    )
+                  ) {
+                    field_arr[
+                      x1 + j + (y1 + z) * 40
+                    ].firstChild.style.width = `${
+                      parseInt(
+                        field_arr[x1 + j + (y1 + z) * 40].firstChild.style.width
+                      ) - 20
+                    }%`; // уменьшение хп на 20%, если соперник находится внутри 3x3 квадрата
+                    if (
+                      parseInt(
+                        field_arr[x1 + j + (y1 + z) * 40].firstChild.style.width
+                      ) == 0
+                    ) {
+                      field_arr[x1 + j + (y1 + z) * 40].removeChild(
+                        field_arr[x1 + j + (y1 + z) * 40].firstChild
+                      );
+                      field_arr[x1 + j + (y1 + z) * 40].classList.remove(
+                        "tileP"
+                      );
+                      document.removeEventListener("keydown", turn);
+                      document.querySelector("h1").innerText =
+                        "Вы проиграли, перезапустите страницу чтобы попробовать ещё раз";
+                    } // если хп упало до 0, проигрышь
+                  }
+                }
+              }
+            } // проверка на персонажа вблизи
+
+            if (getRandomNumber(0, 1)) {
+              // 50% на движение в сторону героя, 50% на случайное движение
+
+              // движение в сторону героя
+              if (x >= x1 && y >= y1) {
+                // герой справа снизу
+
+                if (
+                  x - x1 < y - y1 &&
+                  !field_arr[x1 + (y1 + 1) * 40].classList.contains("tileW") &&
+                  !field_arr[x1 + (y1 + 1) * 40].classList.contains("tileE") &&
+                  !field_arr[x1 + (y1 + 1) * 40].classList.contains("tileP")
+                ) {
+                  tile_e = field_arr[x1 + (y1 + 1) * 40]; // движение вниз
+                  tile_e.classList.add("tileE");
+                  tile_e.appendChild(i.firstChild);
+                  i.classList.remove("tileE");
+                  if (i.firstChild) {
+                    i.removeChild(i.firstChild);
+                  }
+                } else if (
+                  !field_arr[x1 + 1 + y1 * 40].classList.contains("tileW") &&
+                  !field_arr[x1 + 1 + y1 * 40].classList.contains("tileE") &&
+                  !field_arr[x1 + 1 + y1 * 40].classList.contains("tileP")
+                ) {
+                  tile_e = field_arr[x1 + 1 + y1 * 40]; // движение вправо
+                  tile_e.classList.add("tileE");
+                  tile_e.appendChild(i.firstChild);
+                  i.classList.remove("tileE");
+                  if (i.firstChild) {
+                    i.removeChild(i.firstChild);
+                  }
+                }
+                // удаление старого тайла
+              } else if (x >= x1 && y <= y1) {
+                // герой справа сверху
+
+                if (
+                  x - x1 < y1 - y &&
+                  !field_arr[x1 + (y1 - 1) * 40].classList.contains("tileW") &&
+                  !field_arr[x1 + (y1 - 1) * 40].classList.contains("tileE") &&
+                  !field_arr[x1 + (y1 - 1) * 40].classList.contains("tileP")
+                ) {
+                  tile_e = field_arr[x1 + (y1 - 1) * 40]; // движение вверх
+                  tile_e.classList.add("tileE");
+                  tile_e.appendChild(i.firstChild);
+                  i.classList.remove("tileE");
+                  if (i.firstChild) {
+                    i.removeChild(i.firstChild);
+                  }
+                } else if (
+                  !field_arr[x1 + 1 + y1 * 40].classList.contains("tileW") &&
+                  !field_arr[x1 + 1 + y1 * 40].classList.contains("tileE") &&
+                  !field_arr[x1 + 1 + y1 * 40].classList.contains("tileP")
+                ) {
+                  tile_e = field_arr[x1 + 1 + y1 * 40]; // движение вправо
+                  tile_e.classList.add("tileE");
+                  tile_e.appendChild(i.firstChild);
+                  i.classList.remove("tileE");
+                  if (i.firstChild) {
+                    i.removeChild(i.firstChild);
+                  }
+                }
+              } else if (x <= x1 && y <= y1) {
+                // герой слева сверху
+                if (
+                  x1 - x < y1 - y &&
+                  !field_arr[x1 + (y1 - 1) * 40].classList.contains("tileW") &&
+                  !field_arr[x1 + (y1 - 1) * 40].classList.contains("tileE") &&
+                  !field_arr[x1 + (y1 - 1) * 40].classList.contains("tileP")
+                ) {
+                  tile_e = field_arr[x1 + (y1 - 1) * 40]; // движение вверх
+                  tile_e.classList.add("tileE");
+                  tile_e.appendChild(i.firstChild);
+                  i.classList.remove("tileE");
+                  if (i.firstChild) {
+                    i.removeChild(i.firstChild);
+                  }
+                } else if (
+                  !field_arr[x1 - 1 + y1 * 40].classList.contains("tileW") &&
+                  !field_arr[x1 - 1 + y1 * 40].classList.contains("tileE") &&
+                  !field_arr[x1 - 1 + y1 * 40].classList.contains("tileP")
+                ) {
+                  tile_e = field_arr[x1 - 1 + y1 * 40]; // движение влево
+                  tile_e.classList.add("tileE");
+                  tile_e.appendChild(i.firstChild);
+                  i.classList.remove("tileE");
+                  if (i.firstChild) {
+                    i.removeChild(i.firstChild);
+                  }
+                }
+              } else if (x <= x1 && y >= y1) {
+                // герой слева снизу
+                if (
+                  x1 - x < y1 - y &&
+                  !field_arr[x1 + (y1 + 1) * 40].classList.contains("tileW") &&
+                  !field_arr[x1 + (y1 + 1) * 40].classList.contains("tileE") &&
+                  !field_arr[x1 + (y1 + 1) * 40].classList.contains("tileP")
+                ) {
+                  tile_e = field_arr[x1 + (y1 + 1) * 40]; // движение вниз
+                  tile_e.classList.add("tileE");
+                  tile_e.appendChild(i.firstChild);
+                  i.classList.remove("tileE");
+                  if (i.firstChild) {
+                    i.removeChild(i.firstChild);
+                  }
+                } else if (
+                  !field_arr[x1 - 1 + y1 * 40].classList.contains("tileW") &&
+                  !field_arr[x1 - 1 + y1 * 40].classList.contains("tileE") &&
+                  !field_arr[x1 - 1 + y1 * 40].classList.contains("tileP")
+                ) {
+                  tile_e = field_arr[x1 - 1 + y1 * 40]; // движение влево
+                  tile_e.classList.add("tileE");
+                  tile_e.appendChild(i.firstChild);
+                  i.classList.remove("tileE");
+                  if (i.firstChild) {
+                    i.removeChild(i.firstChild);
+                  }
+                }
+              }
+            } else {
+              // случайное движение
+              let way = getRandomNumber(0, 3);
+              if (
+                field_arr &&
+                way == 0 &&
+                !field_arr[x1 - 1 + y1 * 40].classList.contains("tileW") &&
+                !field_arr[x1 - 1 + y1 * 40].classList.contains("tileE") &&
+                !field_arr[x1 - 1 + y1 * 40].classList.contains("tileP")
+              ) {
+                tile_e = field_arr[x1 - 1 + y1 * 40]; // движение влево
+                tile_e.classList.add("tileE");
+                tile_e.appendChild(i.firstChild);
+                i.classList.remove("tileE");
+                if (i.firstChild) {
+                  i.removeChild(i.firstChild);
+                }
+              } else if (
+                field_arr &&
+                way == 1 &&
+                !field_arr[x1 + (y1 + 1) * 40].classList.contains("tileW") &&
+                !field_arr[x1 + (y1 + 1) * 40].classList.contains("tileE") &&
+                !field_arr[x1 + (y1 + 1) * 40].classList.contains("tileP")
+              ) {
+                tile_e = field_arr[x1 + (y1 + 1) * 40]; // движение вниз
+                tile_e.classList.add("tileE");
+                tile_e.appendChild(i.firstChild);
+                i.classList.remove("tileE");
+                if (i.firstChild) {
+                  i.removeChild(i.firstChild);
+                }
+              } else if (
+                field_arr &&
+                way == 2 &&
+                !field_arr[x1 + 1 + y1 * 40].classList.contains("tileW") &&
+                !field_arr[x1 + 1 + y1 * 40].classList.contains("tileE") &&
+                !field_arr[x1 + 1 + y1 * 40].classList.contains("tileP")
+              ) {
+                tile_e = field_arr[x1 + 1 + y1 * 40]; // движение вправо
+                tile_e.classList.add("tileE");
+                tile_e.appendChild(i.firstChild);
+                i.classList.remove("tileE");
+                if (i.firstChild) {
+                  i.removeChild(i.firstChild);
+                }
+              } else if (
+                field_arr &&
+                way == 3 &&
+                !field_arr[x1 + (y1 - 1) * 40].classList.contains("tileW") &&
+                !field_arr[x1 + (y1 - 1) * 40].classList.contains("tileE") &&
+                !field_arr[x1 + (y1 - 1) * 40].classList.contains("tileP")
+              ) {
+                tile_e = field_arr[x1 + (y1 - 1) * 40]; // движение вверх
+                tile_e.classList.add("tileE");
+                tile_e.appendChild(i.firstChild);
+                i.classList.remove("tileE");
+                if (i.firstChild) {
+                  i.removeChild(i.firstChild);
+                }
+              }
+            }
+            if (tile_e) {
+              tile_e.classList.add("moved");
+            }
+          }
+        }
+
+        for (let i of field_arr) {
+          if (i.classList.contains("moved")) {
+            i.classList.remove("moved");
+          }
+        }
+
+        if (win_flag)
+          document.querySelector("h1").innerText =
+            "Вы выиграли! Чтобы начать заново перезагрузите страницу.";
+      });
+
+      redrawArray(); // перерисовка блока
+    </script>
+  </body>
+</html>
